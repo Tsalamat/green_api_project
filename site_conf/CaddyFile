@@ -1,0 +1,6 @@
+404tears.kz, www.404tears.kz {
+    root * /var/www/404tears
+    file_server
+
+    try_files {path} /index.html
+}

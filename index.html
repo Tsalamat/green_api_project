@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GREEN-API Test Task</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 40px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      grid-column: 1 / -1;
+      margin: 0 0 10px;
+      font-size: 24px;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+
+    input {
+      padding: 12px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 12px;
+      margin-bottom: 12px;
+      border: none;
+      border-radius: 6px;
+      background: #13a463;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #0d854f;
+    }
+
+    textarea {
+      min-height: 520px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      resize: vertical;
+      font-family: monospace;
+      background: #f9f9f9;
+    }
+
+    .block {
+      margin-bottom: 20px;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>GREEN-API Test Page</h1>
+
+    <div>
+      <div class="block">
+        <div class="label">Connection</div>
+        <input id="idInstance" placeholder="idInstance" />
+        <input id="apiTokenInstance" placeholder="ApiTokenInstance" />
+      </div>
+
+      <div class="block">
+        <button onclick="getSettings()">getSettings</button>
+        <button onclick="getStateInstance()">getStateInstance</button>
+      </div>
+
+      <div class="block">
+        <div class="label">sendMessage</div>
+        <input id="chatId" placeholder="chatId: 77001234567@c.us" />
+        <input id="message" placeholder="message" />
+        <button onclick="sendMessage()">sendMessage</button>
+      </div>
+
+      <div class="block">
+        <div class="label">sendFileByUrl</div>
+        <input id="fileChatId" placeholder="chatId: 77001234567@c.us" />
+        <input id="urlFile" placeholder="urlFile: https://example.com/file.jpg" />
+        <input id="fileName" placeholder="fileName: image.jpg" />
+        <input id="caption" placeholder="caption" />
+        <button onclick="sendFileByUrl()">sendFileByUrl</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="label">Response</div>
+      <textarea id="response" readonly placeholder="API response will be shown here"></textarea>
+    </div>
+  </div>
+
+  <script>
+    function getBaseUrl(method) {
+      const idInstance = document.getElementById("idInstance").value.trim();
+      const apiTokenInstance = document.getElementById("apiTokenInstance").value.trim();
+
+      if (!idInstance || !apiTokenInstance) {
+        throw new Error("Введите idInstance и ApiTokenInstance");
+      }
+
+      return `https://api.green-api.com/waInstance${idInstance}/${method}/${apiTokenInstance}`;
+    }
+
+    function showResponse(data) {
+      document.getElementById("response").value = JSON.stringify(data, null, 2);
+    }
+
+    function showError(error) {
+      document.getElementById("response").value = "ERROR:\n" + error.message;
+    }
+
+    async function request(method, options = {}) {
+      try {
+        const url = getBaseUrl(method);
+
+        const response = await fetch(url, options);
+        const text = await response.text();
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
+
+        showResponse({
+          status: response.status,
+          ok: response.ok,
+          data: data
+        });
+      } catch (error) {
+        showError(error);
+      }
+    }
+
+    async function getSettings() {
+      await request("getSettings", {
+        method: "GET"
+      });
+    }
+
+    async function getStateInstance() {
+      await request("getStateInstance", {
+        method: "GET"
+      });
+    }
+
+    async function sendMessage() {
+      const chatId = document.getElementById("chatId").value.trim();
+      const message = document.getElementById("message").value.trim();
+
+      if (!chatId || !message) {
+        showError(new Error("Введите chatId и message"));
+        return;
+      }
+
+      await request("sendMessage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          chatId: chatId,
+          message: message
+        })
+      });
+    }
+
+    async function sendFileByUrl() {
+      const chatId = document.getElementById("fileChatId").value.trim();
+      const urlFile = document.getElementById("urlFile").value.trim();
+      const fileName = document.getElementById("fileName").value.trim();
+      const caption = document.getElementById("caption").value.trim();
+
+      if (!chatId || !urlFile || !fileName) {
+        showError(new Error("Введите chatId, urlFile и fileName"));
+        return;
+      }
+
+      await request("sendFileByUrl", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          chatId: chatId,
+          urlFile: urlFile,
+          fileName: fileName,
+          caption: caption
+        })
+      });
+    }
+  </script>
+</body>
+</html>
